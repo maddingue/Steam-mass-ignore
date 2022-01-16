@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam mass ignore
 // @description     massively ignore games, DLC, items on Steam
-// @version         0.2.0
+// @version         0.2.1
 // @author          Sébastien Aperghis-Tramoni
 // @copyright       2022 Sébastien Aperghis-Tramoni
 // @license         MIT
@@ -56,8 +56,9 @@
         for (var i = 0; i < rows.length; i++) {
             var appid = rows[i].attributes["data-ds-appid"];
             var ignored = rows[i].classList.contains("ds_ignored");
+            var wishlisted = rows[i].classList.contains("ds_wishlist");
 
-            if (appid && !ignored) {
+            if (appid && (!ignored || !wishlisted)) {
                 appid = appid.nodeValue;
                 console.log("- ignoring appid:" + appid);
                 button.innerHTML = "Ignore all" + ".".repeat(1 + i % 3);
