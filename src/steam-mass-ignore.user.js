@@ -55,10 +55,12 @@
 
         for (var i = 0; i < rows.length; i++) {
             var appid = rows[i].attributes["data-ds-appid"];
+            var owned = rows[i].classList.contains("ds_owned");
             var ignored = rows[i].classList.contains("ds_ignored");
             var wishlisted = rows[i].classList.contains("ds_wishlist");
+            var skip = owned || ignored || wishlisted;
 
-            if (appid && (!ignored || !wishlisted)) {
+            if (appid && !skip) {
                 appid = appid.nodeValue;
                 console.log("- ignoring appid:" + appid);
                 button.innerHTML = "Ignore all" + ".".repeat(1 + i % 3);
