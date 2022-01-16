@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Steam mass ignore
-// @description     ignore all DLC of a game
-// @version         0.1.0
+// @description     massively ignore games, DLC, items on Steam
+// @version         0.2.0
 // @author          Sébastien Aperghis-Tramoni
 // @copyright       2022 Sébastien Aperghis-Tramoni
 // @license         MIT
@@ -35,7 +35,7 @@
     }
 
 
-    function ignore_appid(appid) {
+    async function ignore_appid(appid) {
         var payload = "sessionid=" + sessionid
                     + "&appid=" + appid
                     + "&remove=0";
@@ -47,20 +47,50 @@
     }
 
 
-    async function find_and_ignore_all_dlc (event) {
-        console.log(">>> find_and_ignore_all_dlc()");
-        var rows = document.getElementsByClassName("game_area_dlc_row");
+    async function loop_ignore (event, class_name) {
+        console.log(">>> loop_ignore()");
+        var rows = document.getElementsByClassName(class_name);
+        var button = document.getElementById("ignore_all_dlc_button");
+        console.log("- working on " + rows.length + " elements");
 
         for (var i = 0; i < rows.length; i++) {
-            var appid = (rows[i].attributes["data-ds-appid"].nodeValue);
-            var btn = rows[i].children[4];
-            console.log("- ignoring appid:" + appid);
-            ignore_appid(appid);
-            await sleep(100);
+            var appid = rows[i].attributes["data-ds-appid"];
+            var ignored = rows[i].classList.contains("ds_ignored");
+
+            if (appid && !ignored) {
+                appid = appid.nodeValue;
+                console.log("- ignoring appid:" + appid);
+                button.innerHTML = "Ignore all" + ".".repeat(1 + i % 3);
+                ignore_appid(appid);
+                await sleep(100);
+            }
         }
 
-        var button = document.getElementById("ignore_all_dlc_button");
-        button.innerHTML = "Ignore all DLC: done";
+        button.innerHTML = "Ignore all: done";
+    }
+
+
+    async function ignore_all_dlc (event) {
+        console.log(">>> ignore_all_dlc()");
+        loop_ignore(event, "game_area_dlc_row");
+    }
+
+
+    async function ignore_in_bundle_sub (event) {
+        console.log(">>> ignore_in_bundle_sub()");
+        loop_ignore(event, "tablet_list_item");
+    }
+
+
+    async function ignore_in_search_result (event) {
+        console.log(">>> ignore_in_search_result()");
+        loop_ignore(event, "search_result_row");
+    }
+
+
+    async function ignore_in_curator_page (event) {
+        console.log(">>> ignore_in_curator_page()");
+        loop_ignore(event, "store_capsule");
     }
 
 
@@ -68,20 +98,51 @@
     var sessionid = get_cookie("sessionid");
 
     // create [ignore all DLC] button
-    var ignore_all_dlc_button = document.createElement("a");
-    ignore_all_dlc_button.id = "ignore_all_dlc_button";
-    ignore_all_dlc_button.addEventListener("click", find_and_ignore_all_dlc);
-    ignore_all_dlc_button.appendChild(document.createTextNode("Ignore all DLC"));
+    var ignore_button = document.createElement("a");
+    ignore_button.id = "ignore_all_dlc_button";
+    ignore_button.appendChild(document.createTextNode("Ignore all"));
 
-    var ignore_all_dlc_span = document.createElement("span");
-    ignore_all_dlc_span.className = "note";
-    ignore_all_dlc_span.appendChild(ignore_all_dlc_button);
+    var ignore_span = document.createElement("span");
+    ignore_span.className = "note";
+    ignore_span.appendChild(ignore_button);
 
-    // install the button at the top of the DLC section
+    // app page: install the button at the top of the DLC section
     var dlc_section = document.getElementById("gameAreaDLCSection");
     if (dlc_section) {
         var dlc_section_head = dlc_section.firstElementChild;
-        dlc_section_head.append(ignore_all_dlc_span);
+        dlc_section_head.append(ignore_span);
+        ignore_button.addEventListener("click", ignore_all_dlc);
     }
-    
+
+    // bundle/sub pages: install the button on the side
+    var package_header_container = document.getElementById("package_header_container");
+    if (package_header_container) {
+        var header = (document.getElementsByClassName("no_margin"))[0];
+        header.append(ignore_span);
+        ignore_button.addEventListener("click", ignore_in_bundle_sub);
+    }
+
+    // search result page: install the button on the side
+    var search_form = document.getElementById("advsearchform");
+    if (search_form) {
+        search_form.append(ignore_span);
+        search_form.firstElementChild.before(ignore_span);
+        ignore_button.addEventListener("click", ignore_in_search_result);
+        ignore_span.style.position = "fixed";
+        ignore_span.style.left = "2%";
+        ignore_span.style.border = "solid 1px #eee";
+        ignore_span.style.padding = "5px";
+    }
+
+    // curator/developer/publisher pages: install the button on the side
+    var recommandations_table = document.getElementById("RecommendationsTable");
+    if (recommandations_table) {
+        recommandations_table.append(ignore_span);
+        recommandations_table.firstElementChild.before(ignore_span);
+        ignore_button.addEventListener("click", ignore_in_curator_page);
+        ignore_span.style.position = "fixed";  // doesn't work as expected
+        ignore_span.style.left = "2%";
+        ignore_span.style.border = "solid 1px #eee";
+        ignore_span.style.padding = "5px";
+    }
 })();
