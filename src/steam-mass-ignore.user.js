@@ -97,7 +97,7 @@
     // initialize
     var sessionid = get_cookie("sessionid");
 
-    // create [ignore all DLC] button
+    // create [ignore] button
     var ignore_button = document.createElement("a");
     ignore_button.id = "ignore_all_dlc_button";
     ignore_button.appendChild(document.createTextNode("Ignore all"));
